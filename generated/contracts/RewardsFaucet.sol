@@ -87,124 +87,57 @@ interface IERC20 {
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
-
-
-
  
- 
- 
-   
-
-interface MintableERC20  {
-     function mint(address account, uint256 amount) external ;
-     function burn(address account, uint256 amount) external ;
-}
-
- 
- 
-abstract contract ApproveAndCallFallBack {
-       function receiveApproval(address from, uint256 tokens, address token, bytes memory data) public virtual;
-  }
-  
-  
-  
   
 /**
  * 
  * 
- *  Staking contract that supports community-extractable donations 
+ *   
  *
  */
-contract MinersGuild is 
-  ApproveAndCallFallBack
-{
+
+contract RewardsFaucet {
+ 
   
-  address public _stakeableCurrency; 
-  address public _reservePoolToken; 
+  address public faucetDestination;  
+  address public faucetCurrency;
+
+  uint256 public lastDripTime; 
+  uint256 public constant maxDripTime = 31557600; 
+ 
    
-    
-  constructor(  address stakeableCurrency, address reservePoolToken  ) 
-  { 
-    
-   _stakeableCurrency = stakeableCurrency;
-   _reservePoolToken = reservePoolToken;
+  constructor(  address _faucetDestination, address _faucetCurrency  ) 
+  {  
+
+   faucetDestination = _faucetDestination; 
+
+   faucetCurrency = _faucetCurrency;
+
+   lastDripTime = block.timestamp;
+
+  }  
+   
+  function drip() public returns (bool){   
+
+     IERC20(faucetCurrency).transfer( faucetDestination, getDripAmount() ); 
+
+     lastDripTime = block.timestamp;
+      
+     return true; 
+
   } 
+  
+  function getDripAmount() public view returns (uint256){
+         
+     return getDripAmountFromSeconds( block.timestamp - lastDripTime ); 
+  }
+
+  function getDripAmountFromSeconds(uint256 divisor) public view returns (uint256){
+             
+     if(divisor > maxDripTime) divisor = maxDripTime; 
  
-  
-  function stakeCurrency( address from,  uint256 currencyAmount ) public returns (bool){
-       
-      uint256 reserveTokensMinted = _reserveTokensMinted(  currencyAmount) ;
-     
-      require( IERC20(_stakeableCurrency).transferFrom(from, address(this), currencyAmount ), 'transfer failed'  );
-          
-      MintableERC20(_reservePoolToken).mint(from,  reserveTokensMinted) ;
-      
-     return true; 
-  }
-  
-   
-  function unstakeCurrency( uint256 reserveTokenAmount, address currencyToClaim) public returns (bool){
-        
-     
-      uint256 vaultOutputAmount =  _vaultOutputAmount( reserveTokenAmount, currencyToClaim );
-        
-        
-      MintableERC20(_reservePoolToken).burn(msg.sender,  reserveTokenAmount ); 
-      
-       
-      IERC20(currencyToClaim).transfer( msg.sender, vaultOutputAmount );
-       
-      
-      
-     return true; 
-  }
-  
-
-    //amount of reserve_tokens to give to staker 
-  function _reserveTokensMinted(  uint256 currencyAmount ) public view returns (uint){
-
-      uint256 totalReserveTokens = IERC20(_reservePoolToken).totalSupply();
-
-
-      uint256 internalVaultBalance =  IERC20(_stakeableCurrency).balanceOf(address(this)); 
-      
-     
-      if(totalReserveTokens == 0 || internalVaultBalance == 0 ){
-        return currencyAmount;
-      }
-      
-      
-      uint256 incomingTokenRatio = (currencyAmount*100000000) / internalVaultBalance;
-       
-       
-      return ( ( totalReserveTokens)  * incomingTokenRatio) / 100000000;
-  }
-  
-  
-    //amount of output tokens to give to redeemer
-  function _vaultOutputAmount(   uint256 reserveTokenAmount, address currencyToClaim ) public view returns (uint){
-
-      uint256 internalVaultBalance = IERC20(currencyToClaim ).balanceOf(address(this));
-      
-
-      uint256 totalReserveTokens = IERC20(_reservePoolToken).totalSupply();
- 
-       
-      uint256 burnedTokenRatio = (reserveTokenAmount*100000000) / totalReserveTokens  ;
-      
-       
-      return (internalVaultBalance * burnedTokenRatio) / 100000000;
-  }
-
- 
-  
-  
-    function receiveApproval(address from, uint256 tokens, address token, bytes memory data) public override{
-      require(token == _stakeableCurrency);
-      
-       stakeCurrency(from, tokens);  
-    }
-    
+     return  (divisor * IERC20(faucetCurrency).balanceOf(address(this)) / maxDripTime*2); 
+  } 
    
      // ------------------------------------------------------------------------
 
