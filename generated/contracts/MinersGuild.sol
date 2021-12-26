@@ -121,6 +121,7 @@ contract MinersGuild is
   
   address public _stakeableCurrency; 
   address public _reservePoolToken; 
+  uint256 immutable multiplierFactor = 10000 ether;
    
     
   constructor(  address stakeableCurrency, address reservePoolToken  ) 
@@ -174,10 +175,10 @@ contract MinersGuild is
       }
       
       
-      uint256 incomingTokenRatio = (currencyAmount*100000000) / internalVaultBalance;
+      uint256 incomingTokenRatio = (currencyAmount*multiplierFactor) / internalVaultBalance;
        
        
-      return ( ( totalReserveTokens)  * incomingTokenRatio) / 100000000;
+      return ( ( totalReserveTokens)  * incomingTokenRatio) / multiplierFactor;
   }
   
   
@@ -190,10 +191,10 @@ contract MinersGuild is
       uint256 totalReserveTokens = IERC20(_reservePoolToken).totalSupply();
  
        
-      uint256 burnedTokenRatio = (reserveTokenAmount*100000000) / totalReserveTokens  ;
+      uint256 burnedTokenRatio = (reserveTokenAmount*multiplierFactor) / totalReserveTokens  ;
       
        
-      return (internalVaultBalance * burnedTokenRatio) / 100000000;
+      return (internalVaultBalance * burnedTokenRatio) / multiplierFactor;
   }
 
  

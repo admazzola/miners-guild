@@ -6,6 +6,9 @@ import ganache from 'ganache-cli'
 import  Web3 from 'web3' 
 import { expect } from 'chai';
 
+import BigNumber from 'bignumber.js' 
+
+
 import TestHelper from './test-helper.js'
 
 let testAccountA = {
@@ -61,15 +64,15 @@ describe("EIP712 Contract Testing", function() {
      // let primaryAccountAddress = testAccount.publicAddress
       
      
-     contractInstances['stakeabletoken'] = await TestHelper.deployContract(tokenContractData ,primaryAccountAddress, web3, [8])
-     contractInstances['reservetoken'] = await TestHelper.deployContract(tokenContractData ,primaryAccountAddress, web3, [8])
+     contractInstances['stakeabletoken'] = await TestHelper.deployContract(tokenContractData ,primaryAccountAddress, web3, [18])
+     contractInstances['reservetoken'] = await TestHelper.deployContract(tokenContractData ,primaryAccountAddress, web3, [18])
 
      contractInstances['guild'] = await TestHelper.deployContract(guildContractData ,primaryAccountAddress, web3, [contractInstances['stakeabletoken'].options.address, contractInstances['reservetoken'].options.address])
 
 
 
-     contractInstances['auxiliarytoken'] = await TestHelper.deployContract(tokenContractData ,primaryAccountAddress, web3, [8])
-     contractInstances['hackytoken'] = await TestHelper.deployContract(hackytokenContractData ,primaryAccountAddress, web3, [8])
+     contractInstances['auxiliarytoken'] = await TestHelper.deployContract(tokenContractData ,primaryAccountAddress, web3, [18])
+     contractInstances['hackytoken'] = await TestHelper.deployContract(hackytokenContractData ,primaryAccountAddress, web3, [18])
     
    
       //console.log("deployed contract at ", contractInstances['guild'].options.address)
@@ -221,5 +224,89 @@ describe("EIP712 Contract Testing", function() {
 
 
 
+    it("mints and stakes large amounts ", async function() {
+
+
+ 
+      let newOwner = await contractInstances['reservetoken'].methods.owner().call()
+      expect( newOwner ).to.equal( contractInstances['guild'].options.address );
+
+      const decimalFactor = new BigNumber( 1000000000000000000 );
+ 
+      await contractInstances['stakeabletoken'].methods.mint(primaryAccountAddress, decimalFactor.multipliedBy(90000000000)).send({from: primaryAccountAddress})
+      await contractInstances['stakeabletoken'].methods.mint(secondaryAccountAddress, decimalFactor.multipliedBy(90000000000)).send({from: primaryAccountAddress})
+
+      await contractInstances['auxiliarytoken'].methods.mint(secondaryAccountAddress, decimalFactor.multipliedBy(90000000000)).send({from: primaryAccountAddress})
+
+     
+      let myBalance = await TestHelper.getERC20Balance( contractInstances['stakeabletoken'] , primaryAccountAddress   )
+      expect(  (myBalance) ).to.equal( '90000000000000000000000006099' );
+
+
+      //secondary account stakes 1000 
+      await contractInstances['stakeabletoken'].methods.approveAndCall(contractInstances['guild'].options.address, decimalFactor.multipliedBy(10000000000), '0x0').send({from: secondaryAccountAddress,  gasLimit: 8000000 })
+
+
+      let myReserve = await TestHelper.getERC20Balance( contractInstances['reservetoken'] , primaryAccountAddress   )
+      expect(  (myReserve) ).to.equal( '2543' );
+
+     
+       //primary account stakes 1000 
+      await contractInstances['stakeabletoken'].methods.approveAndCall(contractInstances['guild'].options.address, 1000, '0x0').send({from: primaryAccountAddress,  gasLimit: 8000000 })
+
+      myBalance = await TestHelper.getERC20Balance( contractInstances['stakeabletoken'] , primaryAccountAddress   )
+       expect(  (myBalance) ).to.equal( '90000000000000000000000005099' );
+
+
+        myReserve = await TestHelper.getERC20Balance( contractInstances['reservetoken'] , primaryAccountAddress   )
+       expect(  (myReserve) ).to.equal( '2543' );
+
+ 
+ 
+       await contractInstances['stakeabletoken'].methods.approveAndCall(contractInstances['guild'].options.address, 1000, '0x0').send({from: primaryAccountAddress,  gasLimit: 8000000 })
+       myReserve = await TestHelper.getERC20Balance( contractInstances['reservetoken'] , primaryAccountAddress   )
+       expect(  (myReserve) ).to.equal(  '2543' );
+ 
+  
+       
+      let reserveMinted =  await contractInstances['guild'].methods._reserveTokensMinted(decimalFactor.multipliedBy(5)).call()
+      expect(  ( reserveMinted ) ).to.equal(  '3614568455416538869' );
+
+      let outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(499, contractInstances['stakeabletoken'].options.address ).call()
+      expect(  ( outputAmount ) ).to.equal(  '0' );
+
+ 
+
+       myBalance = await TestHelper.getERC20Balance( contractInstances['stakeabletoken'] , primaryAccountAddress   )
+       expect(  (myBalance) ).to.equal( '90000000000000000000000004099' );
+/*
+
+        // primary account unstakes 100 shares  , has 900 shares left 
+       await contractInstances['guild'].methods.unstakeCurrency(100, contractInstances['stakeabletoken'].options.address).send({from: primaryAccountAddress,  gasLimit: 8000000 })
+       myBalance = await TestHelper.getERC20Balance( contractInstances['stakeabletoken'] , primaryAccountAddress   )
+       expect(  (myBalance) ).to.equal( 7099 );
+
+        //1000 tokens are donated 
+       await contractInstances['stakeabletoken'].methods.transfer(contractInstances['guild'].options.address, 1000).send({from: secondaryAccountAddress})
+     
+       outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(499, contractInstances['stakeabletoken'].options.address).call()
+       expect(  ( outputAmount ) ).to.equal(  671  );
+
+
+       
+         // primary account stakes 1000 shares  
+       await contractInstances['stakeabletoken'].methods.approveAndCall(contractInstances['guild'].options.address, 1000, '0x0').send({from: primaryAccountAddress,  gasLimit: 8000000 })
+       myReserve = await TestHelper.getERC20Balance( contractInstances['reservetoken'] , primaryAccountAddress   )
+       expect(  (myReserve) ).to.equal( 2643 );
+
+        // primary account can unstake the shares they just added and will get out approximately the 0xBTC they put in 
+         outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(743, contractInstances['stakeabletoken'].options.address).call()
+       expect(  ( outputAmount ) ).to.equal(  999 );
+ 
+     */
+
+      
+     
+    });
  
   });
