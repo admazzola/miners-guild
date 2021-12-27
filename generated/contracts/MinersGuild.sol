@@ -121,7 +121,7 @@ contract MinersGuild is
   
   address public _stakeableCurrency; 
   address public _reservePoolToken; 
-  uint256 immutable multiplierFactor = 10000 ether;
+  uint256 immutable multiplierFactor = 1000000 ether;
    
     
   constructor(  address stakeableCurrency, address reservePoolToken  ) 

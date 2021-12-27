@@ -263,37 +263,40 @@ describe("EIP712 Contract Testing", function() {
 
  
  
-       await contractInstances['stakeabletoken'].methods.approveAndCall(contractInstances['guild'].options.address, 1000, '0x0').send({from: primaryAccountAddress,  gasLimit: 8000000 })
+       await contractInstances['stakeabletoken'].methods.approveAndCall(contractInstances['guild'].options.address, decimalFactor.multipliedBy(900000000), '0x0').send({from: primaryAccountAddress,  gasLimit: 8000000 })
        myReserve = await TestHelper.getERC20Balance( contractInstances['reservetoken'] , primaryAccountAddress   )
-       expect(  (myReserve) ).to.equal(  '2543' );
+       expect(  (myReserve) ).to.equal(  '650622321975107120995710792' );
  
   
        
       let reserveMinted =  await contractInstances['guild'].methods._reserveTokensMinted(decimalFactor.multipliedBy(5)).call()
-      expect(  ( reserveMinted ) ).to.equal(  '3614568455416538869' );
+      expect(  ( reserveMinted ) ).to.equal(  '3614568455417259976' );
+   
+      let outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(1000000, contractInstances['stakeabletoken'].options.address ).call()
+      expect(  ( outputAmount ) ).to.equal(  '1373400' );
 
-      let outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(499, contractInstances['stakeabletoken'].options.address ).call()
-      expect(  ( outputAmount ) ).to.equal(  '0' );
+        outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(decimalFactor.multipliedBy(7000000), contractInstances['stakeabletoken'].options.address ).call()
+      expect(  ( outputAmount ) ).to.equal(  '9683036974315551792265405' );
 
  
 
        myBalance = await TestHelper.getERC20Balance( contractInstances['stakeabletoken'] , primaryAccountAddress   )
-       expect(  (myBalance) ).to.equal( '90000000000000000000000004099' );
-/*
+       expect(  (myBalance) ).to.equal( '89100000000000000000000005099' );
+
 
         // primary account unstakes 100 shares  , has 900 shares left 
-       await contractInstances['guild'].methods.unstakeCurrency(100, contractInstances['stakeabletoken'].options.address).send({from: primaryAccountAddress,  gasLimit: 8000000 })
+       await contractInstances['guild'].methods.unstakeCurrency(decimalFactor.multipliedBy(7000000), contractInstances['stakeabletoken'].options.address).send({from: primaryAccountAddress,  gasLimit: 8000000 })
        myBalance = await TestHelper.getERC20Balance( contractInstances['stakeabletoken'] , primaryAccountAddress   )
-       expect(  (myBalance) ).to.equal( 7099 );
+       expect(  (myBalance) ).to.equal( '89109683036974315551792270504' );
 
         //1000 tokens are donated 
        await contractInstances['stakeabletoken'].methods.transfer(contractInstances['guild'].options.address, 1000).send({from: secondaryAccountAddress})
      
-       outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(499, contractInstances['stakeabletoken'].options.address).call()
-       expect(  ( outputAmount ) ).to.equal(  671  );
+       outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(499999, contractInstances['stakeabletoken'].options.address).call()
+       expect(  ( outputAmount ) ).to.equal(  '686089'  );
 
 
-       
+       /*
          // primary account stakes 1000 shares  
        await contractInstances['stakeabletoken'].methods.approveAndCall(contractInstances['guild'].options.address, 1000, '0x0').send({from: primaryAccountAddress,  gasLimit: 8000000 })
        myReserve = await TestHelper.getERC20Balance( contractInstances['reservetoken'] , primaryAccountAddress   )
@@ -303,8 +306,8 @@ describe("EIP712 Contract Testing", function() {
          outputAmount =  await contractInstances['guild'].methods._vaultOutputAmount(743, contractInstances['stakeabletoken'].options.address).call()
        expect(  ( outputAmount ) ).to.equal(  999 );
  
-     */
-
+     
+*/
       
      
     });
